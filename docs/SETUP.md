@@ -265,6 +265,12 @@ From your phone, send "What are your opening hours?" to the test number (it appe
    - **Upgraded / sandbox screen:** **Sandbox settings** → **When a message comes in**.
 4. Set `PUBLIC_BASE_URL=https://your-name.ngrok-free.dev` (with `https://`, no path), restart the app, and message the number.
 
+![Twilio trial: linked phone and Standard auto-reply](img/twilio-01-trial-send.png)
+*New Twilio trial: after `join twilio-trial`, Twilio sends its Standard auto-reply until a Custom webhook is set.*
+
+![Twilio trial: Receive a message tab](img/twilio-02-receive-custom.png)
+*Receive a message → Auto-reply settings → **Custom** is where the webhook URL goes.*
+
 ---
 
 ## 6. Calibrate the relevance threshold

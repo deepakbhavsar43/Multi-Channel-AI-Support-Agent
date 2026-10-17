@@ -42,6 +42,9 @@ Patient's phone ◀──WhatsApp── Meta Cloud API ◀──── Graph API
 
 > ⚠️ **Meta Business Suite is a different site.** If you land on a page with Home / Ads Manager / Inbox, or "Unable to access Meta Business Suite with this account", you're in the wrong place for this step — go back to developers.facebook.com/apps. You don't need a Facebook Page.
 
+![Business Suite access error](img/meta-06-business-suite-wrong-page.png)
+*Wrong place: this is Meta Business Suite. Use developers.facebook.com/apps instead.*
+
 ### Step 2. Claim the free test number
 
 1. In your app, open **Connect on WhatsApp → Overview** (or **WhatsApp → API Setup** in older layouts).
@@ -49,6 +52,15 @@ Patient's phone ◀──WhatsApp── Meta Cloud API ◀──── Graph API
 3. Open **Step 1. Try it out**. Meta has created a test number such as `+1 555 xxx xxxx`.
 
 > ⚠️ **Only Step 1 is needed.** Skip *Step 2. Production setup* and *Step 3. Business verification*. Production setup registers a phone number as the **business** number — if you enter your personal number there, Meta will ask you to disconnect it from your own WhatsApp. **Don't.** Your personal number is the *patient* in this setup.
+
+![WhatsApp Overview steps](img/meta-01-overview.png)
+*Overview: only **Step 1. Try it out** is needed.*
+
+![Claim a WhatsApp test number](img/meta-02-claim-test-number.png)
+*Claiming the test number: the portfolio is preselected; wait for the button, then Continue.*
+
+![Production setup asks to disconnect the number](img/meta-05-production-warning.png)
+*If you see this, close the dialog: you're in Production setup with your personal number.*
 
 ### Step 3. Copy the Phone number ID, generate a token, add yourself as a recipient
 
@@ -61,6 +73,12 @@ On the **Step 1. Try it out** page:
 3. **Graph API version** — the sample request on the right starts with `https://graph.facebook.com/v25.0/…`. Copy that version → `META_GRAPH_VERSION`.
 4. **Recipient** — open the dropdown → **Manage phone number list** → add your WhatsApp number → enter the code WhatsApp sends you. The test number can only **reply** to numbers on this list (max 5).
 5. Select your number as the recipient and click **Send message**. A template message (e.g. "hello world" / order confirmation) arrives on your phone from the test number. ✅ Token and recipient list work — and that chat is where you'll talk to the bot.
+
+![Try it out page](img/meta-03-try-it-out.png)
+*Try it out: test number, Phone Number ID and WhatsApp Business account ID (blurred), Generate token, Recipient.*
+
+![Recipient list](img/meta-04-recipient-list.png)
+*Recipient dropdown with your number added (blurred). Use **Manage phone number list** to add more.*
 
 ### Step 4. Copy the App secret
 
@@ -129,6 +147,12 @@ WHATSAPP_PROVIDER=meta
 6. Scroll to **Webhook fields**, find **messages**, and click **Subscribe**. *(Verifying the URL does not subscribe you — this step is easy to miss.)*
 7. Optional: click **Test** on the `messages` row. A `POST /webhooks/meta/whatsapp 200` should appear in the inspector. (It uses a fake sender, so the reply fails with `131030` — expected.)
 
+![Verify token field](img/meta-07-verify-token.png)
+*Verify token = `META_VERIFY_TOKEN`; leave the client certificate switch off.*
+
+![ngrok inspector showing the verification GET](img/ngrok-01-verification-get.png)
+*Meta's verification request in the ngrok inspector: `facebookplatform` user agent, `200 OK`, challenge echoed back.*
+
 ### Step 8. Link your WhatsApp account to the app
 
 If a real message from your phone produces **no POST** in the inspector, your WhatsApp Business account isn't subscribed to the app yet. Run (PowerShell), with your **WhatsApp Business account ID** from Step 3 and your token:
@@ -157,6 +181,12 @@ The token from Step 3 expires within hours (you'll see `HTTP 401 code 190` in th
 
 You won't need to replace it again. Keep it secret — it can message as your business. It belongs only in `.env` (already in `.gitignore`).
 
+![Assign WhatsApp accounts to the system user](img/meta-08-system-user-assets.png)
+*Assign assets → WhatsApp accounts. Duplicates are harmless; Select all is fine.*
+
+![Token permissions](img/meta-09-system-user-permissions.png)
+*Only `whatsapp_business_management` and `whatsapp_business_messaging` are needed.*
+
 ---
 
 ## Part 4 — Test
@@ -165,6 +195,9 @@ You won't need to replace it again. Keep it secret — it can message as your bu
 2. From your phone, reply in the chat with the test number: **"What are your opening hours?"**
 3. You should see `POST /webhooks/meta/whatsapp 200` in the inspector and an answer on your phone within a few seconds.
 4. Try: "Book a cleaning tomorrow at 11am", "Status of ORD-1001" (last name Sharma), and "Talk to a human" — then reply from http://localhost:8000/admin; the staff message arrives on your phone.
+
+![Webhook POST in the inspector](img/ngrok-02-webhook-post.png)
+*A real WhatsApp message arriving: `POST /webhooks/meta/whatsapp 200 OK`.*
 
 ### Where to look when something fails
 
