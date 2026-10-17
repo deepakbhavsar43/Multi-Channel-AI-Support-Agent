@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lotus Lane Dental — Assistant</title>
+<script>
+  // Apply the saved light/dark choice before first paint (falls back to the system setting).
+  (function () { try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {} })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground:#F4F6F4; --surface:#FFFFFF; --ink:#12201C; --muted:#55635E; --line:#DDE3E0; --line-strong:#C5CFCB;
+    --brand:#0B5D55; --brand-ink:#FFFFFF; --brand-tint:#E3F0EC; --brand-text:#0B5D55;
+    --bot:#F4F6F4; --amber-tint:#FCEFD9; --amber-ink:#5C2E04; --amber-line:#E8C79A;
+    --ok-tint:#E4F2E7; --ok-ink:#1F4D2E; --ok-dot:#2E7D45; --off-dot:#8A968F;
+    --red-tint:#FBE4E2; --red-ink:#7F1414;
+    --mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+  }
+  :root { color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark;
+    --ground:#0F1614; --surface:#17201E; --ink:#E6ECEA; --muted:#9AA8A3; --line:#2A3634; --line-strong:#3A4845;
+    --brand:#2C9A8E; --brand-ink:#04140F; --brand-tint:#173A35; --brand-text:#7FD3C7;
+    --bot:#1F2A28; --amber-tint:#3A2A12; --amber-ink:#F4D3A1; --amber-line:#6B4E22;
+    --ok-tint:#173322; --ok-ink:#A7DDB6; --ok-dot:#5FCB82; --red-tint:#3A1817; --red-ink:#F3B4AE;
+  } }
+  :root[data-theme="dark"] { color-scheme: dark;
+    --ground:#0F1614; --surface:#17201E; --ink:#E6ECEA; --muted:#9AA8A3; --line:#2A3634; --line-strong:#3A4845;
+    --brand:#2C9A8E; --brand-ink:#04140F; --brand-tint:#173A35; --brand-text:#7FD3C7;
+    --bot:#1F2A28; --amber-tint:#3A2A12; --amber-ink:#F4D3A1; --amber-line:#6B4E22;
+    --ok-tint:#173322; --ok-ink:#A7DDB6; --ok-dot:#5FCB82; --red-tint:#3A1817; --red-ink:#F3B4AE;
+  }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+         font:15px/1.5 "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  button, input, textarea { font:inherit; color:inherit; }
+  :focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+  [hidden] { display:none !important; }
+  .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .mono { font-family:var(--mono); font-size:.87em; }
+
+  header.top { background:var(--surface); border-bottom:1px solid var(--line); }
+  .top-in { max-width:1180px; margin:0 auto; padding:12px 24px; display:flex; flex-wrap:wrap; align-items:center; gap:12px 16px; }
+  .brand { display:flex; align-items:center; gap:12px; min-width:0; }
+  .logo { width:40px; height:40px; border-radius:12px; background:var(--brand); display:grid; place-items:center; flex-shrink:0; }
+  .logo svg { stroke:var(--brand-ink); }
+  .brand b { display:block; font-size:16px; }
+  .brand small { display:block; font-size:13px; color:var(--muted); }
+  .top-actions { margin-left:auto; display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+  .pill { display:inline-flex; align-items:center; gap:8px; font-size:13px; padding:6px 12px; border-radius:999px; background:var(--ok-tint); color:var(--ok-ink); }
+  .pill .dot { width:8px; height:8px; border-radius:50%; background:var(--ok-dot); }
+  .pill.off { background:var(--bot); color:var(--muted); } .pill.off .dot { background:var(--off-dot); }
+  .btn { min-height:44px; padding:0 16px; border-radius:10px; border:1px solid var(--line-strong); background:var(--surface);
+         font-weight:600; display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+  .btn:hover { border-color:var(--brand); }
+  .btn[disabled] { opacity:.55; cursor:default; }
+  .btn.icon { width:44px; padding:0; justify-content:center; }
+
+  main { max-width:1180px; margin:0 auto; padding:24px; display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start; }
+  .chat { flex:999 1 560px; min-width:0; background:var(--surface); border:1px solid var(--line); border-radius:18px;
+          display:flex; flex-direction:column; height:calc(100dvh - 64px - 48px); min-height:520px; overflow:hidden; }
+  #log { flex:1; overflow-y:auto; padding:24px 24px 8px; display:flex; flex-direction:column; gap:14px; scroll-behavior:smooth; }
+  .day { align-self:center; font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  .notice { align-self:center; font-size:13px; color:var(--muted); background:var(--bot); padding:8px 14px; border-radius:10px; text-align:center; max-width:520px; }
+  .row-me { align-self:flex-end; max-width:78%; }
+  .me { background:var(--brand); color:var(--brand-ink); padding:10px 14px; border-radius:16px 16px 4px 16px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .row-bot { align-self:flex-start; max-width:82%; display:flex; flex-direction:column; gap:8px; min-width:0; }
+  .bot { background:var(--bot); padding:12px 14px; border-radius:16px 16px 16px 4px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .bot.fallback { background:var(--red-tint); color:var(--red-ink); }
+  .metarow { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:13px; }
+  .src { display:inline-flex; align-items:center; gap:6px; color:var(--brand-text); background:var(--brand-tint); padding:3px 10px; border-radius:999px; }
+  .whybtn { border:0; background:none; cursor:pointer; color:var(--muted); text-decoration:underline; text-underline-offset:3px; padding:4px; min-height:32px; font-size:13px; }
+  .whybtn[aria-expanded="true"] { color:var(--ink); }
+  .trail { margin:0; border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; }
+  .trail dt { color:var(--muted); font-size:12.5px; } .trail dd { margin:0; font-weight:600; overflow-wrap:anywhere; }
+  .card { border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--surface); width:440px; max-width:100%; }
+  .card-body { padding:14px 16px; display:flex; gap:14px; align-items:flex-start; }
+  .card-icon { width:44px; height:44px; border-radius:10px; background:var(--brand-tint); color:var(--brand-text); display:grid; place-items:center; flex-shrink:0; }
+  .card-main { flex:1; min-width:0; } .card-main b { display:block; } .card-sub { color:var(--muted); font-size:14px; }
+  .card-ref { font-family:var(--mono); font-size:12px; color:var(--muted); }
+  .card-actions { display:flex; border-top:1px solid var(--line); }
+  .card-actions button { flex:1; min-height:44px; border:0; background:var(--surface); font-weight:600; color:var(--brand-text); cursor:pointer; }
+  .card-actions button + button { border-left:1px solid var(--line); }
+  .card-actions button:hover { background:var(--brand-tint); }
+  .slots { display:flex; flex-wrap:wrap; gap:6px; }
+  .banner { align-self:stretch; display:flex; gap:12px; align-items:flex-start; background:var(--amber-tint); color:var(--amber-ink); border-radius:12px; padding:12px 14px; }
+  .banner.urgent { background:var(--red-tint); color:var(--red-ink); }
+  .banner b { display:block; }
+  .row-staff { align-self:flex-start; max-width:82%; display:flex; gap:10px; align-items:flex-end; }
+  .avatar { width:32px; height:32px; border-radius:50%; background:var(--amber-tint); color:var(--amber-ink); display:grid; place-items:center; font-size:13px; font-weight:700; flex-shrink:0; }
+  .who { font-size:12px; color:var(--muted); margin:0 0 4px 4px; }
+  .staff { background:var(--surface); border:1px solid var(--amber-line); padding:12px 14px; border-radius:16px 16px 16px 4px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .typing { display:inline-flex; gap:5px; padding:16px 16px; }
+  .typing i { width:7px; height:7px; border-radius:50%; background:var(--muted); animation:blink 1.2s infinite ease-in-out; }
+  .typing i:nth-child(2) { animation-delay:.15s; } .typing i:nth-child(3) { animation-delay:.3s; }
+  @keyframes blink { 0%,80%,100% { opacity:.25 } 40% { opacity:1 } }
+  @media (prefers-reduced-motion: reduce) { .typing i { animation:none; opacity:.6 } #log { scroll-behavior:auto } }
+
+  .chips { padding:10px 24px 0; display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { min-height:40px; padding:0 14px; border-radius:999px; border:1px solid var(--line-strong); background:var(--surface); font-size:14px; cursor:pointer; }
+  .chip:hover { border-color:var(--brand); background:var(--brand-tint); }
+  .chip.sm { min-height:36px; padding:0 12px; font-size:13.5px; background:var(--ground); border-color:var(--line); }
+  form.composer { margin:0; padding:14px 24px 8px; display:flex; gap:10px; align-items:flex-end; }
+  textarea { flex:1; resize:none; min-height:48px; max-height:160px; padding:12px 16px; border-radius:14px; border:1px solid var(--line-strong); background:var(--surface); line-height:1.45; }
+  .send { width:48px; height:48px; border-radius:14px; border:0; background:var(--brand); color:var(--brand-ink); display:grid; place-items:center; cursor:pointer; flex-shrink:0; }
+  .send[disabled] { opacity:.5; cursor:default; }
+  .fine { padding:0 24px 14px; font-size:12.5px; color:var(--muted); display:flex; gap:12px; justify-content:space-between; }
+  .count { font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+  aside { flex:1 1 300px; min-width:0; display:flex; flex-direction:column; gap:16px; }
+  .panel { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:20px; }
+  .panel h2 { margin:0 0 4px; font-size:16px; }
+  .panel p { margin:0 0 14px; font-size:14px; color:var(--muted); }
+  .label { font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 6px; }
+  .group + .group { margin-top:14px; }
+  .group div { display:flex; flex-wrap:wrap; gap:6px; }
+  ol.how { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:14px; }
+  ol.how li { display:flex; gap:12px; }
+  ol.how .n { width:28px; height:28px; border-radius:8px; background:var(--brand-tint); color:var(--brand-text); display:grid; place-items:center; font-weight:700; font-size:13px; flex-shrink:0; }
+  ol.how .n.amber { background:var(--amber-tint); color:var(--amber-ink); }
+  ol.how b { display:block; } ol.how span.d { font-size:14px; color:var(--muted); }
+  .link { background:none; border:0; padding:0 4px; color:var(--brand-text); text-decoration:underline; text-underline-offset:3px; cursor:pointer; font-size:13px; min-height:32px; }
+
+  @media (max-width: 900px) {
+    body { display:flex; flex-direction:column; height:100dvh; }
+    aside { display:none; }
+    main { padding:0; flex:1; min-height:0; min-width:0; width:100%; display:flex; }
+    .chat { border-radius:0; border:0; height:auto; min-height:0; flex:1; }
+    .brand small { display:none; } .pill { font-size:12px; padding:5px 10px; }
+    .top-in { padding:10px 16px; }
+    #log { padding:16px 16px 8px; } .chips { padding:8px 16px 0; } form.composer { padding:10px 16px 6px; } .fine { padding:0 16px 10px; }
+    .row-me, .row-bot, .row-staff { max-width:92%; }
+    .btn .txt { display:none; } .btn { width:44px; padding:0; justify-content:center; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20c-4-2.5-7-6-7-10a7 7 0 0 1 7-3 7 7 0 0 1 7 3c0 4-3 7.5-7 10z"/><path d="M12 7v13"/></svg></div>
+      <div><b>Lotus Lane Dental Care</b><small>Assistant · answers from clinic documents</small></div>
+    </div>
+    <div class="top-actions">
+      <button class="btn icon" id="themeBtn" type="button" aria-label="Switch theme"></button>
+      <span class="pill off" id="clinic" role="status"><span class="dot"></span><span id="clinicLabel">Checking…</span></span>
+      <button class="btn" id="human" type="button" aria-label="Talk to a person">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+        <span class="txt">Talk to a person</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="chat" aria-label="Conversation">
+    <div id="log" role="log" aria-live="polite" aria-relevant="additions">
+      <div class="day">Today</div>
+      <div class="notice">Demo clinic with dummy data. Answers come only from Lotus Lane’s documents — if I’m unsure, I’ll bring in a person.</div>
+    </div>
+    <div class="chips" id="chips" aria-label="Suggested replies"></div>
+    <form class="composer" id="f">
+      <label for="t" class="sr-only">Message</label>
+      <textarea id="t" rows="1" maxlength="1500" placeholder="Type a message…" autocomplete="off"></textarea>
+      <button class="send" id="sendBtn" aria-label="Send message">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+    <div class="fine"><span>Never share card numbers or OTPs here — they’re removed automatically. In an emergency, call your local emergency number.</span><span class="count" id="count"></span></div>
+  </section>
+
+  <aside>
+    <div class="panel">
+      <h2>Try asking</h2>
+      <p>Tap one to send it.</p>
+      <div class="group"><div class="label">Questions</div><div id="sugQ"></div></div>
+      <div class="group"><div class="label">Actions</div><div id="sugA"></div></div>
+    </div>
+    <div class="panel">
+      <h2 style="margin-bottom:14px">How this assistant works</h2>
+      <ol class="how">
+        <li><span class="n">1</span><div><b>Answers from clinic documents</b><span class="d">Every answer names its source. No source, no answer.</span></div></li>
+        <li><span class="n">2</span><div><b>Takes real actions</b><span class="d">Checks slots, books visits, tracks lab orders.</span></div></li>
+        <li><span class="n amber">3</span><div><b>Hands over when unsure</b><span class="d">Symptoms, complaints or low confidence go to staff.</span></div></li>
+      </ol>
+    </div>
+    <div style="font-size:13px; color:var(--muted); padding:0 4px">Also on WhatsApp — same assistant. <button type="button" class="link" id="reset">Start a new conversation</button></div>
+  </aside>
+</main>
+
+<script>
+"use strict";
+const QUESTIONS = ["What are your opening hours?", "How much is teeth cleaning?", "Do you do implants?", "Which insurance do you accept?"];
+const ACTIONS = ["Book a cleaning tomorrow at 11am", "Status of lab order ORD-1001", "I want to talk to a human"];
+const DOC_NAMES = { "01_clinic_info": "Clinic info", "02_services_and_pricing": "Services & pricing",
+  "03_appointment_policy": "Appointment policy", "04_insurance_and_payments": "Insurance & payments",
+  "05_aftercare_and_faq": "Aftercare & FAQ", "06_privacy_and_complaints": "Privacy & complaints" };
+
+const $ = id => document.getElementById(id);
+const log = $("log"), t = $("t"), sendBtn = $("sendBtn");
+const store = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
+                set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} },
+                del(k) { try { sessionStorage.removeItem(k); } catch (e) {} } };
+let sid = store.get("sid");
+if (!sid) { sid = "demo" + Math.random().toString(36).slice(2, 12); store.set("sid", sid); }
+let lastId = 0, busy = false, shownTickets = new Set();
+
+// ---------- tiny DOM helpers (all user/model text goes through textContent) ----------
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v);
+  }
+  for (const k of kids) if (k != null) e.append(k);
+  return e;
+}
+const SVG = {
+  doc: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></svg>',
+  cal: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/></svg>',
+  box: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>',
+  person: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;margin-top:2px"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c1-3.5 3.3-5 6-5s5 1.5 6 5"/><path d="M16 8h5M18.5 5.5 21 8l-2.5 2.5"/></svg>',
+};
+const icon = name => { const s = el("span"); s.innerHTML = SVG[name]; return s.firstChild; };  // static markup only
+const scrollEnd = () => { log.scrollTop = log.scrollHeight; };
+
+// ---------- renderers ----------
+function addUser(text) { log.append(el("div", { class: "row-me" }, el("div", { class: "me", text }))); scrollEnd(); }
+
+function sourceLabel(id, meta) {
+  if (meta.source_labels && meta.source_labels[id]) return meta.source_labels[id].split(" › ")[0];
+  return DOC_NAMES[id.split("#")[0]] || id;
+}
+
+function addBot(text, meta = {}) {
+  const kind = meta.kind || "";
+  if (kind === "handoff") { addHandoff(text, meta); return; }
+  const row = el("div", { class: "row-bot" }, el("div", { class: "bot" + (kind === "fallback" ? " fallback" : ""), text }));
+  for (const a of meta.actions || []) { const c = actionCard(a); if (c) row.append(c); }
+
+  const sources = meta.sources || [];
+  if (sources.length || meta.confidence) {
+    const metaRow = el("div", { class: "metarow" });
+    const seen = new Set();
+    for (const id of sources) {
+      const label = sourceLabel(id, meta); if (seen.has(label)) continue; seen.add(label);
+      metaRow.append(el("span", { class: "src", title: (meta.source_labels || {})[id] || id }, icon("doc"), label));
+    }
+    const trailId = "trail" + Math.random().toString(36).slice(2, 8);
+    const dl = el("dl", { class: "trail", id: trailId, hidden: "" },
+      el("div", {}, el("dt", { text: "Confidence" }), el("dd", { text: cap(meta.confidence || "—") })),
+      el("div", {}, el("dt", { text: "Answer type" }), el("dd", { text: humanKind(kind) })),
+      el("div", {}, el("dt", { text: "Sources" }), el("dd", { text: sources.map(id => (meta.source_labels || {})[id] || id).join("; ") || "None needed" })),
+      el("div", {}, el("dt", { text: "Checks passed" }), el("dd", { text: checks(kind, meta) })));
+    const btn = el("button", { type: "button", class: "whybtn", "aria-expanded": "false", "aria-controls": trailId, text: "Why this answer?" });
+    btn.addEventListener("click", () => { const open = dl.hidden; dl.hidden = !open; btn.setAttribute("aria-expanded", String(open));
+      btn.textContent = open ? "Hide details" : "Why this answer?"; });
+    metaRow.append(btn);
+    row.append(metaRow, dl);
+  }
+  log.append(row); scrollEnd();
+}
+const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+const humanKind = k => ({ answer: "Answer from documents", action_result: "Action taken", clarify: "Clarifying question",
+  smalltalk: "Conversation", guard: "Safety check", in_handoff: "Waiting for staff" }[k] || cap(k) || "—");
+function checks(kind, meta) {
+  if (kind === "answer") return "Cited · sources retrieved this turn";
+  if (kind === "action_result") return "Result returned by a tool";
+  if (kind === "guard") return "Handled before the model";
+  return "Reply verified";
+}
+
+function actionCard({ tool, result }) {
+  if (!result || typeof result !== "object") return null;
+  if (tool === "book_appointment" && result.booking_ref) {
+    return el("div", { class: "card" },
+      el("div", { class: "card-body" }, el("div", { class: "card-icon" }, icon("cal")),
+        el("div", { class: "card-main" }, el("b", { text: result.service }), el("div", { text: result.when }),
+          el("div", { class: "card-sub", text: result.dentist + " · 12 Lotus Lane, 1st floor" })),
+        el("span", { class: "card-ref", text: result.booking_ref })),
+      el("div", { class: "card-actions" },
+        el("button", { type: "button", text: "Reschedule", onclick: () => send(`I need to reschedule ${result.booking_ref}`) }),
+        el("button", { type: "button", text: "Add to calendar", onclick: () => downloadIcs(result) })));
+  }
+  if (tool === "get_order_status" && result.order_id) {
+    return el("div", { class: "card" },
+      el("div", { class: "card-body" }, el("div", { class: "card-icon" }, icon("box")),
+        el("div", { class: "card-main" }, el("b", { text: result.item }), el("div", { text: result.status }),
+          result.expected_date ? el("div", { class: "card-sub", text: "Expected " + fmtDate(result.expected_date) }) : null),
+        el("span", { class: "card-ref", text: result.order_id })));
+  }
+  if (tool === "check_availability" && Array.isArray(result.available) && result.available.length) {
+    const wrap = el("div", { class: "slots", "aria-label": "Free slots" });
+    result.available.slice(0, 8).forEach(s => wrap.append(
+      el("button", { type: "button", class: "chip sm", text: s, onclick: () => send(`${s} on ${fmtDate(result.date)} please`) })));
+    return wrap;
+  }
+  return null;
+}
+function fmtDate(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return isNaN(d) ? iso : d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+}
+function downloadIcs(b) {
+  // "Sat 17 Oct 2026, 11:00 AM" (clinic local time) -> floating local time in the .ics
+  const m = /(\d{1,2}) (\w{3}) (\d{4}), (\d{1,2}):(\d{2}) (AM|PM)/.exec(b.when || "");
+  if (!m) return;
+  const mon = "JanFebMarAprMayJunJulAugSepOctNovDec".indexOf(m[2]) / 3 + 1;
+  let h = +m[4] % 12 + (m[6] === "PM" ? 12 : 0);
+  const p = n => String(n).padStart(2, "0");
+  const start = `${m[3]}${p(mon)}${p(m[1])}T${p(h)}${m[5]}00`;
+  const endD = new Date(+m[3], mon - 1, +m[1], h, +m[5] + 45);
+  const end = `${endD.getFullYear()}${p(endD.getMonth() + 1)}${p(endD.getDate())}T${p(endD.getHours())}${p(endD.getMinutes())}00`;
+  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Lotus Lane Dental//Assistant//EN", "BEGIN:VEVENT",
+    `UID:${b.booking_ref}@lotuslane-dental.example`, `DTSTART:${start}`, `DTEND:${end}`,
+    `SUMMARY:${b.service} — Lotus Lane Dental`, `DESCRIPTION:${b.dentist}. Ref ${b.booking_ref}`,
+    "LOCATION:12 Lotus Lane\\, Sector 4\\, Demo City", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  const a = el("a", { href: URL.createObjectURL(new Blob([ics], { type: "text/calendar" })), download: `${b.booking_ref}.ics` });
+  document.body.append(a); a.click(); a.remove();
+}
+
+function addHandoff(text, meta) {
+  const urgent = meta.priority === "urgent";
+  if (urgent || !meta.ticket) log.append(el("div", { class: "row-bot" }, el("div", { class: "bot", text })));
+  if (meta.ticket && shownTickets.has(meta.ticket)) { scrollEnd(); return; }
+  if (meta.ticket) shownTickets.add(meta.ticket);
+  const desc = el("div", { style: "font-size:14px" },
+    urgent ? "Our clinic team has been alerted and will contact you as soon as possible." :
+             "A team member will reply right here. ");
+  if (meta.ticket) desc.append(el("span", { text: "Reference " }), el("span", { class: "mono", text: meta.ticket }), ".");
+  log.append(el("div", { class: "banner" + (urgent ? " urgent" : ""), role: "status" }, icon("person"),
+    el("div", {}, el("b", { text: urgent ? "Urgent — staff alerted" : "Connecting you to our team" }), desc)));
+  scrollEnd();
+}
+
+function addStaff(text, meta = {}) {
+  const name = (meta.agent && meta.agent !== "Staff") ? meta.agent : "Clinic team";
+  log.append(el("div", { class: "row-staff" }, el("div", { class: "avatar", "aria-hidden": "true", text: name[0].toUpperCase() }),
+    el("div", {}, el("div", { class: "who", text: name + " · Staff" }), el("div", { class: "staff", text }))));
+  scrollEnd();
+}
+
+function typing(on) {
+  const ex = $("typing");
+  if (on && !ex) { log.append(el("div", { class: "row-bot", id: "typing" }, el("div", { class: "bot typing", "aria-label": "Assistant is typing" }, el("i"), el("i"), el("i")))); scrollEnd(); }
+  if (!on && ex) ex.remove();
+}
+
+// ---------- suggestions ----------
+function chip(text, cls = "chip") { return el("button", { type: "button", class: cls, text, onclick: () => send(text) }); }
+function setChips(list) { $("chips").replaceChildren(...list.map(s => chip(s))); }
+function defaultChips() { return window.matchMedia("(max-width: 900px)").matches ? QUESTIONS.slice(0, 2).concat(ACTIONS) : []; }
+QUESTIONS.forEach(q => $("sugQ").append(chip(q, "chip sm")));
+ACTIONS.forEach(q => $("sugA").append(chip(q, "chip sm")));
+
+// ---------- network ----------
+async function send(text) {
+  text = (text || "").trim();
+  if (!text || busy) return;
+  busy = true; sendBtn.disabled = true; setChips([]);
+  addUser(text); t.value = ""; grow(); typing(true);
+  try {
+    const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sid, message: text }) });
+    const data = await r.json().catch(() => ({}));
+    typing(false);
+    if (!r.ok) {
+      const msg = r.status === 429 ? "You’re sending messages quickly — please wait a moment." :
+        (Array.isArray(data.detail) ? data.detail[0]?.msg : data.detail) || "Something went wrong. Please try again.";
+      log.append(el("div", { class: "notice", text: msg })); scrollEnd();
+    } else if (data.reply) addBot(data.reply, data.meta || {});
+    await poll();
+  } catch (e) {
+    typing(false); log.append(el("div", { class: "notice", text: "Network error — check your connection and try again." })); scrollEnd();
+  } finally { busy = false; sendBtn.disabled = false; t.focus(); }
+}
+
+// history=true on load restores the conversation; later polls only add staff messages,
+// since send() already rendered the user's text and the bot's reply.
+async function poll(history = false) {
+  try {
+    const r = await fetch(`/api/chat/${sid}/messages?after_id=${lastId}`);
+    if (!r.ok) return;
+    for (const m of await r.json()) {
+      lastId = Math.max(lastId, m.id);
+      if (m.sender === "human_agent") addStaff(m.text, m.meta || {});
+      else if (m.sender === "bot" && !history && (m.meta || {}).proactive) addBot(m.text, m.meta);
+      else if (m.sender === "system") { log.append(el("div", { class: "notice", role: "status", text: m.text })); scrollEnd(); }
+      else if (history && m.sender === "user") addUser(m.text);
+      else if (history && m.sender === "bot") addBot(m.text, m.meta || {});
+    }
+  } catch (e) {}
+}
+
+async function clinic() {
+  try {
+    const s = await (await fetch("/api/clinic")).json();
+    $("clinic").classList.toggle("off", !s.staff_online); $("clinicLabel").textContent = s.label;
+  } catch (e) { $("clinicLabel").textContent = "Assistant available 24/7"; }
+}
+
+// ---------- composer ----------
+function grow() {
+  t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 160) + "px";
+  const n = t.value.length; $("count").textContent = n > 1200 ? `${n}/1500` : "";
+}
+t.addEventListener("input", grow);
+t.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(t.value); } });
+$("f").addEventListener("submit", e => { e.preventDefault(); send(t.value); });
+$("human").addEventListener("click", () => send("I'd like to talk to a person, please."));
+$("reset").addEventListener("click", () => { store.del("sid"); location.reload(); });
+
+poll(true).then(() => { if (lastId === 0) setChips(defaultChips()); });
+clinic();
+setInterval(poll, 4000);
+setInterval(clinic, 5 * 60 * 1000);
+
+// ---------- light / dark theme ----------
+(function () {
+  const btn = document.getElementById("themeBtn");
+  const SUN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  const MOON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
+  const current = () => document.documentElement.dataset.theme ||
+    (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  function paint() {
+    const dark = current() === "dark";
+    btn.innerHTML = dark ? SUN : MOON;  // static icon markup only
+    btn.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+    btn.title = dark ? "Light theme" : "Dark theme";
+  }
+  btn.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    paint();
+  });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paint);
+  paint();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staff Console — Lotus Lane Dental</title>
+<script>
+  // Apply the saved light/dark choice before first paint (falls back to the system setting).
+  (function () { try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {} })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground:#F4F6F4; --surface:#FFFFFF; --sunk:#FBFCFB; --ink:#12201C; --muted:#55635E; --line:#DDE3E0; --line-soft:#EEF1EF; --line-strong:#C5CFCB;
+    --brand:#0B5D55; --brand-ink:#FFFFFF; --brand-tint:#E3F0EC; --brand-sel:#EEF6F3; --brand-text:#0B5D55;
+    --bar:#12201C; --bar-ink:#FFFFFF; --bar-muted:#C9D3CF;
+    --amber-tint:#FCEFD9; --amber-ink:#5C2E04; --amber-line:#E8C79A; --amber-text:#8A3F05;
+    --red:#A61B1B; --red-tint:#FBE4E2; --ok:#1F4D2E; --ok-dot:#5FCB82; --bad-dot:#F07A6E; --chip:#EBEFED; --chip-ink:#3B4A45;
+    --mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+  }
+  :root { color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark;
+    --ground:#0F1614; --surface:#17201E; --sunk:#131B19; --ink:#E6ECEA; --muted:#9AA8A3; --line:#2A3634; --line-soft:#223029; --line-strong:#3A4845;
+    --brand:#2C9A8E; --brand-ink:#04140F; --brand-tint:#173A35; --brand-sel:#15302C; --brand-text:#7FD3C7;
+    --bar:#0A100E; --amber-tint:#3A2A12; --amber-ink:#F4D3A1; --amber-line:#6B4E22; --amber-text:#F2B66B;
+    --red:#F07A6E; --red-tint:#3A1817; --ok:#A7DDB6; --chip:#22302D; --chip-ink:#C9D3CF;
+  } }
+  :root[data-theme="dark"] { color-scheme: dark;
+    --ground:#0F1614; --surface:#17201E; --sunk:#131B19; --ink:#E6ECEA; --muted:#9AA8A3; --line:#2A3634; --line-soft:#223029; --line-strong:#3A4845;
+    --brand:#2C9A8E; --brand-ink:#04140F; --brand-tint:#173A35; --brand-sel:#15302C; --brand-text:#7FD3C7;
+    --bar:#0A100E; --amber-tint:#3A2A12; --amber-ink:#F4D3A1; --amber-line:#6B4E22; --amber-text:#F2B66B;
+    --red:#F07A6E; --red-tint:#3A1817; --ok:#A7DDB6; --chip:#22302D; --chip-ink:#C9D3CF;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font:14px/1.5 "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  button, input, textarea { font:inherit; color:inherit; }
+  :focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+  .mono { font-family:var(--mono); font-size:.9em; }
+  .muted { color:var(--muted); }
+  [hidden] { display:none !important; }
+  h2 { margin:0; font-size:16px; } h3 { margin:0; font-size:15px; }
+
+  header.bar { background:var(--bar); color:var(--bar-ink); }
+  .bar-in { max-width:1400px; margin:0 auto; padding:0 24px; min-height:60px; display:flex; flex-wrap:wrap; align-items:center; gap:10px 24px; }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:15px; }
+  .logo span { width:30px; height:30px; border-radius:9px; background:#0B5D55; display:grid; place-items:center; }
+  .health { margin-left:auto; display:flex; flex-wrap:wrap; align-items:center; gap:14px; font-size:13px; color:var(--bar-muted); }
+  .health .h { display:inline-flex; align-items:center; gap:6px; }
+  .health .d { width:7px; height:7px; border-radius:50%; background:var(--ok-dot); }
+  .health .h.bad .d { background:var(--bad-dot); }
+  .me { display:inline-flex; align-items:center; gap:8px; color:var(--bar-ink); }
+  .av { width:30px; height:30px; border-radius:50%; background:#F2B66B; color:#3A1D02; display:grid; place-items:center; font-weight:700; flex-shrink:0; }
+  .barbtn.theme { width:36px; height:36px; padding:0; display:grid; place-items:center; }
+  .barbtn { background:transparent; border:1px solid #3A4A45; color:var(--bar-muted); border-radius:8px; min-height:34px; padding:0 10px; cursor:pointer; }
+
+  .wrap { max-width:1400px; margin:0 auto; padding:20px 24px 32px; display:flex; flex-direction:column; gap:20px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:16px; }
+  .err { color:var(--red); }
+
+  /* sign-in */
+  .gate { max-width:420px; margin:10vh auto; padding:28px; }
+  .gate p { color:var(--muted); margin:6px 0 20px; }
+  .field { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .field label { font-weight:600; font-size:13px; }
+  .input { min-height:44px; padding:0 12px; border-radius:10px; border:1px solid var(--line-strong); background:var(--surface); width:100%; }
+  .primary { min-height:44px; padding:0 20px; border-radius:10px; border:0; background:var(--brand); color:var(--brand-ink); font-weight:600; cursor:pointer; }
+  .secondary { min-height:40px; padding:0 14px; border-radius:10px; border:1px solid var(--line-strong); background:var(--surface); font-weight:600; cursor:pointer; }
+  .primary[disabled], .secondary[disabled] { opacity:.55; cursor:default; }
+
+  /* KPIs */
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; }
+  .kpi { padding:14px 16px; }
+  .kpi .k { color:var(--muted); font-size:13px; }
+  .kpi .v { font-size:28px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.3; }
+  .kpi .v.warn { color:var(--amber-text); }
+  .kpi .s { font-size:12.5px; color:var(--muted); }
+
+  .inbox { display:flex; flex-wrap:wrap; gap:16px; align-items:stretch; }
+  .queue { flex:1 1 300px; max-width:100%; display:flex; flex-direction:column; overflow:hidden; }
+  .queue-head { padding:16px 16px 12px; }
+  .seg { display:flex; gap:4px; background:var(--ground); padding:4px; border-radius:10px; margin-top:10px; }
+  .seg button { flex:1; min-height:34px; border:0; border-radius:7px; background:transparent; color:var(--muted); cursor:pointer; }
+  .seg button[aria-pressed="true"] { background:var(--surface); color:var(--ink); font-weight:600; box-shadow:0 1px 2px rgba(18,32,28,.12); }
+  #queue { list-style:none; margin:0; padding:0 8px 8px; display:flex; flex-direction:column; gap:4px; overflow-y:auto; max-height:640px; }
+  .qi { width:100%; text-align:left; border:1px solid transparent; background:var(--surface); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:4px; cursor:pointer; }
+  .qi:hover { background:var(--ground); }
+  .qi[aria-current="true"] { border-color:var(--brand); background:var(--brand-sel); }
+  .qi .top { display:flex; align-items:center; gap:8px; width:100%; }
+  .qi .top strong { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .qi .why { font-size:13px; } .qi .sub { font-size:12.5px; color:var(--muted); }
+  .prio { font-size:12px; font-weight:700; padding:1px 8px; border-radius:999px; white-space:nowrap; }
+  .prio.urgent { background:var(--red); color:#fff; } .prio.high { background:var(--amber-tint); color:var(--amber-ink); }
+  .prio.normal, .prio.low { background:var(--chip); color:var(--chip-ink); font-weight:600; }
+  .empty { padding:24px 16px; text-align:center; color:var(--muted); }
+
+  .convo { flex:999 1 520px; min-width:0; display:flex; flex-direction:column; overflow:hidden; }
+  .convo-head { padding:14px 18px; border-bottom:1px solid var(--line); display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .convo-head .who { flex:1; min-width:200px; }
+  #thread { flex:1; padding:18px; display:flex; flex-direction:column; gap:12px; background:var(--sunk); overflow-y:auto; min-height:320px; max-height:560px; }
+  .m { max-width:75%; } .m.in { align-self:flex-start; } .m.out { align-self:flex-end; }
+  .bub { padding:10px 14px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .m.in .bub { background:var(--surface); border:1px solid var(--line); border-radius:14px 14px 14px 4px; }
+  .m.bot .bub { background:var(--brand-tint); border-radius:14px 14px 4px 14px; }
+  .m.human_agent .bub { background:var(--amber-tint); border-radius:14px 14px 4px 14px; }
+  .m .meta { font-size:12px; color:var(--muted); margin:4px 4px 0; }
+  .m.out .meta { text-align:right; }
+  .conf-high { color:var(--ok); font-weight:600; } .conf-low { color:var(--red); font-weight:600; }
+  .tool { align-self:center; display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:var(--chip-ink); background:var(--chip); padding:4px 12px; border-radius:999px; font-family:var(--mono); max-width:100%; overflow-wrap:anywhere; }
+  .tool.fail { background:var(--red-tint); color:var(--red); }
+  .divider { display:flex; align-items:center; gap:12px; color:var(--amber-text); font-size:13px; font-weight:600; text-align:center; }
+  .divider::before, .divider::after { content:""; flex:1; height:1px; background:var(--amber-line); }
+
+  .composer { margin:0; padding:14px 18px 18px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:10px; }
+  .inserts { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .ins { min-height:32px; padding:0 10px; border-radius:8px; border:1px solid var(--line); background:var(--ground); font-size:13px; cursor:pointer; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ins:hover { border-color:var(--brand); }
+  .docsearch { min-height:32px; padding:0 10px; border-radius:8px; border:1px solid var(--line); background:var(--surface); font-size:13px; width:180px; }
+  .composer label { font-size:13px; font-weight:600; }
+  .reply { display:flex; gap:10px; align-items:flex-end; }
+  .reply textarea { flex:1; resize:vertical; min-height:64px; padding:12px 14px; border-radius:12px; border:1px solid var(--line-strong); background:var(--surface); }
+  .hint { font-size:12.5px; color:var(--muted); }
+
+  .side { flex:1 1 300px; max-width:100%; display:flex; flex-direction:column; gap:16px; }
+  .side .card { padding:16px; }
+  .side .head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+  dl.facts { margin:0; display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px 12px; font-size:13px; }
+  dl.facts dt { color:var(--muted); } dl.facts dd { margin:0; font-weight:600; overflow-wrap:anywhere; }
+  .summary { margin-top:12px; font-size:13.5px; background:var(--ground); border-radius:10px; padding:10px 12px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .visit { display:flex; gap:12px; align-items:flex-start; } .visit + .visit { margin-top:10px; }
+  .cal { width:44px; text-align:center; border:1px solid var(--line); border-radius:10px; padding:4px 0; flex-shrink:0; }
+  .cal .mo { font-size:11px; font-weight:700; color:var(--brand-text); text-transform:uppercase; } .cal .dy { font-size:18px; font-weight:700; line-height:1.1; }
+  ul.plain { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; font-size:13px; }
+  ul.plain li { display:flex; justify-content:space-between; gap:8px; }
+  .okc { color:var(--ok); } .badc { color:var(--red); font-weight:600; }
+
+  .lower { display:flex; flex-wrap:wrap; gap:16px; }
+  .lower .card { flex:1 1 420px; min-width:0; padding:16px; }
+  .tablebox { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; min-width:380px; }
+  th { text-align:left; color:var(--muted); font-weight:600; padding:8px 6px; border-bottom:1px solid var(--line); }
+  td { padding:8px 6px; border-bottom:1px solid var(--line-soft); }
+  .num { text-align:right; font-variant-numeric:tabular-nums; }
+  ul.events { list-style:none; margin:0; padding:0; font-size:13px; }
+  ul.events li { display:flex; gap:12px; padding:8px 0; border-bottom:1px solid var(--line-soft); }
+  ul.events li:last-child { border-bottom:0; }
+  ul.events .t { color:var(--muted); width:72px; flex-shrink:0; font-variant-numeric:tabular-nums; }
+  ul.events .ty { font-weight:600; width:130px; flex-shrink:0; overflow-wrap:anywhere; }
+  ul.events .ty.handoff { color:var(--amber-text); } ul.events .ty.fallback, ul.events .ty.error { color:var(--red); }
+  ul.events .dt { min-width:0; overflow-wrap:anywhere; }
+  @media (max-width: 700px) { .wrap { padding:16px; } ul.events .ty { width:110px; } .m { max-width:90%; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="bar-in">
+    <div class="logo"><span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20c-4-2.5-7-6-7-10a7 7 0 0 1 7-3 7 7 0 0 1 7 3c0 4-3 7.5-7 10z"/><path d="M12 7v13"/></svg></span>Staff console</div>
+    <div class="health" id="health" aria-label="System status"></div>
+    <button class="barbtn theme" id="themeBtn" type="button" aria-label="Switch theme"></button>
+    <div class="me" id="me" hidden><span class="av" id="meAv" aria-hidden="true"></span><span id="meName"></span><button class="barbtn" id="signout" type="button">Sign out</button></div>
+  </div>
+</header>
+
+<form class="card gate" id="gate" hidden>
+  <h2>Sign in to the staff console</h2>
+  <p>Use the admin token from the server’s <span class="mono">ADMIN_TOKEN</span> setting.</p>
+  <div class="field"><label for="name">Your name (patients see it on your replies)</label><input class="input" id="name" autocomplete="name" placeholder="e.g. Priya" maxlength="40"></div>
+  <div class="field"><label for="tok">Admin token</label><input class="input" id="tok" type="password" autocomplete="current-password"></div>
+  <button class="primary" type="submit">Open console</button>
+  <p class="err" id="gateErr" role="alert" style="margin:12px 0 0"></p>
+</form>
+
+<div class="wrap" id="app" hidden>
+  <p class="err" id="status" role="alert" hidden></p>
+  <section class="kpis" id="kpis" aria-label="Today at a glance"></section>
+
+  <div class="inbox">
+    <section class="card queue" aria-labelledby="qh">
+      <div class="queue-head">
+        <h2 id="qh">Handoff queue</h2>
+        <div class="seg" role="group" aria-label="Filter queue">
+          <button type="button" data-f="all" aria-pressed="true">All</button>
+          <button type="button" data-f="urgent" aria-pressed="false">Urgent</button>
+          <button type="button" data-f="new" aria-pressed="false">New</button>
+        </div>
+      </div>
+      <ul id="queue"></ul>
+    </section>
+
+    <section class="card convo" aria-labelledby="ch">
+      <div class="convo-head">
+        <div class="who"><h2 id="ch">Select a conversation</h2><div class="muted" id="chSub" style="font-size:13px">Pick someone from the queue to see their conversation.</div></div>
+        <button class="primary" id="resolve" type="button" hidden>Resolve &amp; return to assistant</button>
+      </div>
+      <div id="thread" role="log" aria-live="polite"></div>
+      <form class="composer" id="composer" hidden>
+        <div class="inserts">
+          <span class="hint">Insert from docs:</span>
+          <span id="inserts" style="display:contents"></span>
+          <label for="docq" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Search clinic documents</label>
+          <input class="docsearch" id="docq" type="search" placeholder="Search docs…">
+        </div>
+        <label for="rt" id="rtLabel">Reply</label>
+        <div class="reply">
+          <textarea id="rt" rows="2" maxlength="1500" placeholder="Write a reply…"></textarea>
+          <button class="primary" id="send" type="submit">Send</button>
+        </div>
+        <div class="hint" id="rtHint"></div>
+      </form>
+    </section>
+
+    <aside class="side" id="side" aria-label="Case details"></aside>
+  </div>
+
+  <div class="lower">
+    <section class="card" aria-labelledby="th"><h3 id="th" style="margin-bottom:10px">Tool health · today</h3><div class="tablebox"><table id="tools"></table></div></section>
+    <section class="card" aria-labelledby="eh"><h3 id="eh" style="margin-bottom:10px">Recent events</h3><ul class="events" id="events"></ul></section>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const ss = { get: k => { try { return sessionStorage.getItem(k) || ""; } catch (e) { return ""; } },
+             set: (k, v) => { try { sessionStorage.setItem(k, v); } catch (e) {} } };
+const ls = { get: k => { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } },
+             set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+let token = ss.get("tok"), staffName = ls.get("staffName") || "Staff";
+let current = null, filter = "all", queueData = [], lastThreadKey = "", docs = [];
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null) continue;
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v);
+  }
+  for (const k of kids) if (k != null) e.append(k);
+  return e;
+}
+const api = async (path, opts = {}) => {
+  const r = await fetch(path, { ...opts, headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" } });
+  if (r.status === 401 || r.status === 403) { const e = new Error(r.status === 401 ? "That token was not accepted." : "Admin API is disabled: set ADMIN_TOKEN on the server."); e.auth = true; throw e; }
+  if (!r.ok) throw new Error(`${r.status} ${(await r.text()).slice(0, 120)}`);
+  return r.json();
+};
+
+// ---------- formatting ----------
+const clock = iso => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
+const REASONS = { user_requested: "Asked for a person", emergency_keywords: "Emergency symptom", low_confidence: "Low confidence",
+  repeated_tool_failures: "Repeated tool failures", repeated_errors: "Repeated system errors", step_limit: "Too many steps" };
+function reasonText(r) {
+  if (!r) return "Handed off";
+  if (REASONS[r]) return REASONS[r];
+  if (r.startsWith("grounding_failed")) return "Couldn’t ground the answer";
+  if (r.startsWith("agent_requested")) return "Assistant asked: " + (r.split(":").slice(1).join(":").trim() || "needs staff");
+  return cap(r.replace(/_/g, " "));
+}
+function channelOf(uid) { return uid.startsWith("whatsapp:") ? "WhatsApp" : "Web"; }
+function contact(uid) {
+  if (uid.startsWith("whatsapp:")) { const n = uid.slice(9); return n.length > 7 ? `${n.slice(0, 3)} ••••• ${n.slice(-4)}` : n; }
+  return "session …" + uid.slice(-4);
+}
+const displayName = h => h.name || (h.user_id.startsWith("web:") ? "Web visitor" : contact(h.user_id));
+const waitText = m => m == null ? "" : m < 1 ? "just now" : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
+
+// ---------- health (public endpoint) ----------
+async function health() {
+  try {
+    const h = await (await fetch("/health")).json();
+    const items = [[h.llm_ready, h.llm_ready ? "Model ready" : "Model unavailable"],
+                   [true, h.retriever === "dense" ? "Dense retrieval" : "Keyword retrieval"],
+                   [h.whatsapp_configured, h.whatsapp_configured ? "WhatsApp" : "WhatsApp not set up"]];
+    $("health").replaceChildren(...items.map(([ok, label]) => el("span", { class: "h" + (ok ? "" : " bad") }, el("span", { class: "d" }), label)));
+  } catch (e) { $("health").replaceChildren(el("span", { class: "h bad" }, el("span", { class: "d" }), "Server unreachable")); }
+}
+
+// ---------- KPIs ----------
+function kpi(k, v, s, warn) { return el("div", { class: "card kpi" }, el("div", { class: "k", text: k }), el("div", { class: "v" + (warn ? " warn" : ""), text: v }), el("div", { class: "s", text: s })); }
+function renderStats(s) {
+  const t = s.today;
+  const ch = Object.entries(t.by_channel).map(([c, n]) => `${n} ${c === "whatsapp" ? "WhatsApp" : c}`).join(" · ") || "None yet";
+  $("kpis").replaceChildren(
+    kpi("Waiting for staff", t.waiting, t.waiting ? `Oldest ${waitText(t.oldest_wait_min)}` : "Queue clear", t.waiting > 0),
+    kpi("Conversations today", t.conversations, ch),
+    kpi("Handled by assistant", t.handled_by_assistant_pct == null ? "—" : t.handled_by_assistant_pct + "%", `${t.handoffs} handoff${t.handoffs === 1 ? "" : "s"}`),
+    kpi("Bookings made", t.bookings, `${s.appointments} upcoming in total`),
+    kpi("Grounding rejects", t.grounding_rejects, `${t.self_corrected} self-corrected`),
+    kpi("Fallback replies", t.fallbacks, `${t.errors} system error${t.errors === 1 ? "" : "s"}`, t.fallbacks > 0));
+  const tbl = $("tools");
+  const head = el("tr", {}, el("th", { text: "Tool" }), el("th", { class: "num", text: "Calls" }), el("th", { class: "num", text: "Failures" }), el("th", { class: "num", text: "Avg ms" }));
+  const rows = t.tools.map(r => el("tr", {}, el("td", { class: "mono", text: r.name }), el("td", { class: "num", text: r.calls }),
+    el("td", { class: "num" + (r.failures ? " badc" : ""), text: r.failures }), el("td", { class: "num", text: r.avg_ms ?? "—" })));
+  tbl.replaceChildren(el("thead", {}, head), el("tbody", {}, ...(rows.length ? rows : [el("tr", {}, el("td", { colspan: "4", class: "muted", text: "No tool calls yet today." }))])));
+}
+function renderEvents(ev) {
+  const items = ev.map(e => {
+    let d = {}; try { d = JSON.parse(e.detail || "{}"); } catch (x) {}
+    const who = e.user_id ? (e.user_id.startsWith("web:") ? "Web …" + e.user_id.slice(-4) : contact(e.user_id)) : "";
+    const what = d.reason ? reasonText(d.reason) : d.action || d.error || (d.ticket ? d.ticket : "");
+    return el("li", {}, el("span", { class: "t", text: clock(e.created_at) }), el("span", { class: "ty " + e.type, text: e.type }),
+      el("span", { class: "dt", text: [who, what].filter(Boolean).join(" · ").slice(0, 140) }));
+  });
+  $("events").replaceChildren(...(items.length ? items : [el("li", { class: "muted", text: "No events yet." })]));
+}
+
+// ---------- queue ----------
+function renderQueue() {
+  const list = queueData.filter(h => filter === "all" || (filter === "urgent" ? h.priority === "urgent" : !h.staff_joined));
+  const counts = { all: queueData.length, urgent: queueData.filter(h => h.priority === "urgent").length, new: queueData.filter(h => !h.staff_joined).length };
+  document.querySelectorAll(".seg button").forEach(b => { b.textContent = `${({ all: "All", urgent: "Urgent", new: "New" })[b.dataset.f]} ${counts[b.dataset.f]}`; });
+  const box = $("queue");
+  if (!list.length) { box.replaceChildren(el("li", { class: "empty", text: queueData.length ? "Nothing in this filter." : "No one is waiting. The assistant is handling everything." })); return; }
+  box.replaceChildren(...list.map(h => el("li", {}, el("button", { type: "button", class: "qi", "aria-current": h.user_id === current ? "true" : "false", onclick: () => select(h.user_id) },
+    el("span", { class: "top" }, el("strong", { text: displayName(h) }), el("span", { class: "prio " + h.priority, text: cap(h.priority) })),
+    el("span", { class: "why", text: reasonText(h.reason) }),
+    el("span", { class: "sub", text: [channelOf(h.user_id), "waiting " + waitText(h.waiting_min), h.handoff_ticket].filter(Boolean).join(" · ") + (h.staff_joined ? " · replied" : "") })))));
+}
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+  filter = b.dataset.f; document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderQueue();
+}));
+
+// ---------- conversation ----------
+async function select(uid) {
+  current = uid; lastThreadKey = ""; renderQueue();
+  $("rt").value = ""; await loadCase(true);
+}
+async function loadCase(focus = false) {
+  if (!current) return;
+  const uid = current;
+  const [msgs, cs] = await Promise.all([api("/admin/api/conversations/" + encodeURIComponent(uid) + "?limit=80"), api("/admin/api/cases/" + encodeURIComponent(uid))]);
+  if (uid !== current) return;
+  const name = cs.name || displayName({ user_id: uid });
+  $("ch").textContent = name;
+  $("chSub").textContent = `${channelOf(uid)} · ${contact(uid)} · ` + (cs.status === "handoff" ? "assistant paused while you reply" : "assistant is handling this conversation");
+  $("resolve").hidden = cs.status !== "handoff";
+  $("composer").hidden = false;
+  $("rtLabel").textContent = `Reply to ${name.split(" ")[0]} on ${channelOf(uid)}`;
+  $("rtHint").textContent = `Patient sees “${staffName}”. Ctrl+Enter to send.` + (cs.status === "handoff" ? " The assistant stays paused until you resolve." : " Sending pauses nothing — this person isn’t in the queue.");
+  renderThread(msgs, cs.tool_calls);
+  renderSide(cs);
+  const lastUser = [...msgs].reverse().find(m => m.direction === "in");
+  if (focus) suggestDocs(lastUser ? lastUser.text : "");
+}
+// same-second ties: patient message, then the tools it triggered, then replies
+const rank = it => it.t ? 1 : it.m.direction === "in" ? 0 : 2;
+function renderThread(msgs, tools) {
+  const key = (msgs.at(-1)?.id || 0) + ":" + (tools.at(-1)?.id || 0);
+  if (key === lastThreadKey) return;
+  lastThreadKey = key;
+  const items = [...msgs.map(m => ({ at: m.created_at, m })), ...tools.map(t => ({ at: t.created_at, t }))]
+    .sort((a, b) => a.at < b.at ? -1 : a.at > b.at ? 1 : rank(a) - rank(b));
+  const out = [];
+  for (const it of items) {
+    if (it.t) {
+      out.push(el("div", { class: "tool" + (it.t.ok ? "" : " fail") }, `${it.t.name} → ${it.t.summary} · ${it.t.ok ? "ok" : "failed"} · ${it.t.latency_ms ?? "?"} ms`));
+      continue;
+    }
+    const m = it.m; let meta = {}; try { meta = typeof m.meta === "string" ? JSON.parse(m.meta || "{}") : (m.meta || {}); } catch (e) {}
+    if (m.sender === "bot" && meta.kind === "handoff") {
+      out.push(el("div", { class: "divider", role: "separator" }, `Handed to staff · ${reasonText(meta.reason)}${meta.ticket ? " · " + meta.ticket : ""}`));
+    }
+    if (m.sender === "system") {
+      out.push(el("div", { class: "divider", role: "separator", style: "color:var(--brand-text)" }, meta.kind === "handed_back" ? "Returned to assistant · it has the conversation so far" : m.text));
+      continue;
+    }
+    const metaLine = el("div", { class: "meta" });
+    if (m.sender === "user") metaLine.append("Patient · " + clock(m.created_at));
+    else if (m.sender === "human_agent") metaLine.append(`${meta.agent || "Staff"} · ${clock(m.created_at)}`);
+    else {
+      metaLine.append(`Assistant · ${clock(m.created_at)}`);
+      if (meta.confidence) metaLine.append(" · ", el("span", { class: "conf-" + meta.confidence, text: meta.confidence + " confidence" }));
+      if (meta.sources?.length) metaLine.append(" · ", el("span", { class: "mono", title: meta.sources.join(", "), text: meta.sources.map(s => s.split("#")[0]).filter((v, i, a) => a.indexOf(v) === i).join(", ") }));
+      if (meta.kind && !["answer", "handoff"].includes(meta.kind)) metaLine.append(" · " + meta.kind.replace("_", " "));
+    }
+    out.push(el("div", { class: `m ${m.direction} ${m.sender}` }, el("div", { class: "bub", text: m.text }), metaLine));
+  }
+  const th = $("thread");
+  th.replaceChildren(...(out.length ? out : [el("div", { class: "empty", text: "No messages yet." })]));
+  th.scrollTop = th.scrollHeight;
+}
+function renderSide(cs) {
+  const side = [];
+  if (cs.ticket) {
+    const tk = cs.ticket;
+    side.push(el("div", { class: "card" },
+      el("div", { class: "head" }, el("h3", { text: "Ticket" }), el("span", { class: "mono muted", text: tk.ref })),
+      el("dl", { class: "facts" },
+        el("div", {}, el("dt", { text: "Why handed off" }), el("dd", { text: reasonText(cs.reason) })),
+        el("div", {}, el("dt", { text: "Priority" }), el("dd", { class: cs.priority === "urgent" ? "badc" : "", text: cap(cs.priority) })),
+        el("div", {}, el("dt", { text: "Category" }), el("dd", { text: cap(tk.category.replace("_", " ")) })),
+        el("div", {}, el("dt", { text: "Opened" }), el("dd", { text: clock(tk.created_at) }))),
+      el("div", { class: "summary", text: tk.summary })));
+  }
+  const visits = cs.upcoming.map(a => { const d = new Date(a.start_at);
+    return el("div", { class: "visit" }, el("div", { class: "cal", "aria-hidden": "true" }, el("div", { class: "mo", text: d.toLocaleDateString([], { month: "short" }) }), el("div", { class: "dy", text: d.getDate() })),
+      el("div", { style: "font-size:13.5px" }, el("div", { style: "font-weight:600", text: `${a.service_label} · ${d.toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` }),
+        el("div", { class: "muted", text: `${a.dentist} · ${a.ref}` }))); });
+  side.push(el("div", { class: "card" }, el("h3", { text: "Upcoming visits", style: "margin-bottom:10px" }), ...(visits.length ? visits : [el("div", { class: "muted", style: "font-size:13px", text: "No upcoming visits booked." })])));
+  const agg = {}; for (const t of cs.tool_calls) { const a = agg[t.name] ||= { ok: 0, fail: 0 }; t.ok ? a.ok++ : a.fail++; }
+  const rows = Object.entries(agg).map(([n, a]) => el("li", {}, el("span", { class: "mono", text: n }),
+    el("span", {}, a.ok ? el("span", { class: "okc", text: `${a.ok} ok` }) : null, a.ok && a.fail ? " · " : null, a.fail ? el("span", { class: "badc", text: `${a.fail} failed` }) : null)));
+  side.push(el("div", { class: "card" }, el("h3", { text: "Tools used with this person", style: "margin-bottom:10px" }), rows.length ? el("ul", { class: "plain" }, ...rows) : el("div", { class: "muted", style: "font-size:13px", text: "No tool calls yet." })));
+  $("side").replaceChildren(...side);
+}
+
+// ---------- insert from docs ----------
+async function suggestDocs(q) {
+  try { docs = await api("/admin/api/docs?limit=3" + (q ? "&q=" + encodeURIComponent(q.slice(0, 200)) : "")); } catch (e) { docs = []; }
+  $("inserts").replaceChildren(...docs.map(d => el("button", { type: "button", class: "ins", title: `${d.title} › ${d.section}\n\n${d.text}`, text: d.section, onclick: () => insertDoc(d) })));
+}
+function insertDoc(d) {
+  const ta = $("rt"); const add = d.text.replace(/\n{2,}/g, "\n").trim();
+  ta.value = ta.value ? ta.value.trimEnd() + "\n\n" + add : add; ta.focus();
+}
+let docTimer; $("docq").addEventListener("input", e => { clearTimeout(docTimer); docTimer = setTimeout(() => suggestDocs(e.target.value), 250); });
+
+// ---------- actions ----------
+$("composer").addEventListener("submit", async e => {
+  e.preventDefault();
+  const text = $("rt").value.trim(); if (!text || !current) return;
+  $("send").disabled = true;
+  try {
+    const r = await api(`/admin/api/handoffs/${encodeURIComponent(current)}/reply`, { method: "POST", body: JSON.stringify({ text, agent_name: staffName }) });
+    $("rt").value = "";
+    if (!r.delivered) showError("Saved, but WhatsApp delivery failed — check Twilio settings.");
+    await refresh();
+  } catch (err) { showError(err.message); } finally { $("send").disabled = false; }
+});
+$("rt").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) $("composer").requestSubmit(); });
+$("resolve").addEventListener("click", async () => {
+  if (!current) return;
+  $("resolve").disabled = true;
+  try { await api(`/admin/api/handoffs/${encodeURIComponent(current)}/resolve`, { method: "POST" }); await refresh(); }
+  catch (err) { showError(err.message); } finally { $("resolve").disabled = false; }
+});
+
+function showError(msg) { const s = $("status"); s.textContent = msg; s.hidden = !msg; }
+
+async function refresh() {
+  try {
+    const [q, s, ev] = await Promise.all([api("/admin/api/handoffs"), api("/admin/api/stats"), api("/admin/api/events?limit=12")]);
+    showError(""); queueData = q; renderQueue(); renderStats(s); renderEvents(ev);
+    if (!current && q.length) await select(q[0].user_id); else if (current) await loadCase();
+  } catch (e) {
+    if (e.auth) { signOut(e.message); return; }
+    showError("Couldn’t refresh: " + e.message);
+  }
+}
+
+// ---------- sign-in ----------
+function showApp() {
+  $("gate").hidden = true; $("app").hidden = false; $("me").hidden = false;
+  $("meName").textContent = staffName; $("meAv").textContent = staffName[0].toUpperCase();
+}
+function signOut(msg = "") {
+  token = ""; ss.set("tok", ""); current = null;
+  $("app").hidden = true; $("me").hidden = true; $("gate").hidden = false; $("gateErr").textContent = msg;
+  $("name").value = ls.get("staffName"); $("tok").focus();
+}
+$("gate").addEventListener("submit", async e => {
+  e.preventDefault();
+  token = $("tok").value.trim(); staffName = $("name").value.trim() || "Staff";
+  if (!token) { $("gateErr").textContent = "Enter the admin token."; return; }
+  ls.set("staffName", staffName);
+  try { await api("/admin/api/handoffs"); ss.set("tok", token); $("gateErr").textContent = ""; $("tok").value = ""; showApp(); refresh(); }
+  catch (err) { $("gateErr").textContent = err.message; }
+});
+$("signout").addEventListener("click", () => signOut());
+
+health(); setInterval(health, 60000);
+if (token) { showApp(); refresh(); } else signOut();
+setInterval(() => { if (token && !document.hidden) refresh(); }, 8000);
+
+// ---------- light / dark theme ----------
+(function () {
+  const btn = document.getElementById("themeBtn");
+  const SUN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  const MOON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
+  const current = () => document.documentElement.dataset.theme ||
+    (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  function paint() {
+    const dark = current() === "dark";
+    btn.innerHTML = dark ? SUN : MOON;  // static icon markup only
+    btn.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+    btn.title = dark ? "Light theme" : "Dark theme";
+  }
+  btn.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    paint();
+  });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paint);
+  paint();
+})();
+</script>
+</body>
+</html>

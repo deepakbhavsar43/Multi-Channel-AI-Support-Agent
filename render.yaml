@@ -1,0 +1,39 @@
+# One-click deploy on Render (https://render.com) from this repo.
+# SQLite lives on the attached disk so conversations survive restarts.
+services:
+  - type: web
+    name: lotus-lane-support-agent
+    runtime: docker
+    plan: starter            # persistent disks need a paid plan; use "free" without the disk for a quick demo
+    healthCheckPath: /health
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DB_PATH
+        value: /var/data/app.db
+      - key: CHECKPOINT_DB_PATH
+        value: /var/data/checkpoints.db
+      - key: LLM_MODEL
+        value: google_genai:gemini-3.5-flash-lite
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: META_ACCESS_TOKEN
+        sync: false
+      - key: META_PHONE_NUMBER_ID
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
+      - key: META_VERIFY_TOKEN
+        generateValue: true
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        value: whatsapp:+14155238886
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: ADMIN_TOKEN
+        generateValue: true
