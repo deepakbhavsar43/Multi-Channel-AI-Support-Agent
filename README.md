@@ -7,7 +7,7 @@ A WhatsApp support agent for a (fictional) dental clinic. It answers questions *
 **Stack:** Python 3.12 · LangGraph · LangChain (any tool-calling LLM: Gemini / Groq / Ollama / OpenAI / Anthropic) · fastembed (local embeddings) · FastAPI · WhatsApp (Meta Cloud API or Twilio) · SQLite · Docker / Render
 
 <!-- Replace with your own once deployed -->
-**Live demo (available on request):** `https://blast-backdrop-paving.ngrok-free.dev/demo` · **WhatsApp:** `<how to message the test number>` · **Video:** `<link>`
+**Live demo:** `https://<your-app>.onrender.com/demo` · **WhatsApp:** `<how to message the test number>` · **Video:** `<link>`
 
 ---
 
@@ -215,7 +215,7 @@ docker run -p 8000:8000 --env-file .env support-agent
 
 ## Connect WhatsApp
 
-Full walkthrough and troubleshooting: [docs/SETUP.md § 5](docs/SETUP.md#5-connect-whatsapp).
+Full walkthrough and troubleshooting: [docs/SETUP.md § 5](docs/SETUP.md#5-connect-whatsapp). Screen-by-screen Meta + ngrok guide: [docs/WHATSAPP_META_SETUP.md](docs/WHATSAPP_META_SETUP.md).
 
 The app supports two providers and picks Meta automatically when its keys are set (`WHATSAPP_PROVIDER=auto|meta|twilio`):
 
@@ -271,10 +271,27 @@ docs/                   case study draft, demo video script
 
 ## Screenshots
 
-<!-- Add after deploying: docs/img/whatsapp.png, docs/img/demo.png, docs/img/admin.png -->
-| WhatsApp | Web demo with reasoning trail | Staff console |
-|---|---|---|
-| ![](docs/img/whatsapp.png) | ![](docs/img/demo.png) | ![](docs/img/admin.png) |
+**Grounded answer and a booking** — every answer shows its source document; bookings come back from the booking tool with the real reference and fee.
+
+![Web demo: answer with source and booking card](docs/img/app-01-demo-answer-booking.png)
+
+**Order lookup with verification, then handoff** — the order is shown only after the patient confirms the last name; "I want to talk to a human" creates a ticket and pauses the assistant.
+
+![Web demo: order status and handoff banner](docs/img/app-02-demo-order-handoff.png)
+
+**Staff console** — handoff queue, the full conversation with every tool call, ticket summary, upcoming visits and today's numbers.
+
+![Staff console with handoff queue and case view](docs/img/app-04-staff-console.png)
+
+**Staff reply reaches the patient** — the reply from the console appears in the chat (on WhatsApp it arrives as a normal message).
+
+![Web demo: staff reply after handoff](docs/img/app-03-demo-staff-reply.png)
+
+| Mobile | WhatsApp |
+|---|---|
+| <img src="docs/img/app-05-demo-mobile.png" width="300" alt="Web demo on mobile"> | <!-- Add a phone screenshot of the WhatsApp chat as docs/img/app-06-whatsapp.png --> *WhatsApp screenshot: add `docs/img/app-06-whatsapp.png`* |
+
+Setup screenshots (Meta, ngrok, Twilio) are in [docs/WHATSAPP_META_SETUP.md](docs/WHATSAPP_META_SETUP.md) and [docs/SETUP.md](docs/SETUP.md).
 
 ## Limitations and next steps
 
